@@ -7,8 +7,8 @@ using namespace std;
 
 int main() {
 
-	HashTable<int, int> ht(5);
-	
+	HashTable ht(2);
+	cout << ht.get_size();
 	
 	
 	
