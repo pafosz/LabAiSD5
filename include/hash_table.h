@@ -4,47 +4,73 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <random>
+
+size_t random(size_t lower_bound, size_t upper_bound) {
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<size_t> dist(lower_bound, upper_bound);
+
+	return dist(gen);
+}
 
 #define LOAD_FACTOR_THRESHOLD = 0.7
 
 template<typename K, typename V>
-struct Pair {
-	K key;
-	V value;
-	Pair(const K& key, const V& value): key(key), value(value){}
-};
-
-template<typename K, typename V>
 class HashTable {
-	
-	std::vector<Pair<K, V>> *_data;
-	size_t _capacity;
+	struct Pair {
+		K key;
+		V value;
+		bool not_empty;
+		Pair(const K& key, const V& value) : key(key), value(value), not_empty(false) {}
+	};
+	std::vector<Pair> _data;
+	size_t _size;
+	size_t _degree_of_two;
 	static const size_t w = sizeof(K) * 8;
+	inline static size_t a = (random(0, pow(2, w)) | 1);
+
+
+	static size_t random(size_t lower_bound, size_t upper_bound) {
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		std::uniform_int_distribution<size_t> dist(lower_bound, upper_bound);
+
+		return dist(gen);
+	}
 
 	size_t hash_function(const K& key) {
-			return key % _capacity;
-		}
+		return ((key * a) % size_t(pow(2, w))) >> (w - _degree_of_two);
+	}
+
 public:
-	HashTable() : _capacity(0) {}
-	HashTable(size_t degree_of_two) : _capacity(size_t(pow(2, degree_of_two))) {
-		_data = new std::vector<Pair<K, V>>[_capacity];
-		_data->reserve(_capacity);
+
+	HashTable() : _data(NULL), _size(0) { }
+
+	HashTable(size_t degree_of_two) : _degree_of_two(degree_of_two) {
+		_data.reserve((size_t(pow(2, _degree_of_two))));
+		_size = 0;
 	}
 	HashTable(const HashTable& other) {
 		_data = other._data;
-		_capacity = other._capacity;
+		_size = other._size;
 	}
 	~HashTable() {
-		delete[] _data;
+		_data.clear();
 	}
-	
+
 	size_t get_capacity() const {
-		return _data->capacity();
+		return _data.capacity();
 	}
+
 	size_t get_load() const {
-		return _data->size();
+		return _size;
 	}
-	
+
+	size_t get_hash(const K& key) {
+		return hash_function(key);
+	}
+
 };
 
 #endif // !LAB_5_INCLUDE_HASHTABLE_H
