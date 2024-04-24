@@ -1,18 +1,19 @@
 #include <iostream>
-#include <vector>
-#include <bitset>
-#include <random>
+#include <string>
 
 #include "../include/hash_table.h"
 using namespace std;
 
 
-
 int main() {
-
-	HashTable<int, int> ht(5);
-	cout << ht.get_hash(7);
-
+	setlocale(LC_ALL, "rus");
+	HashTable<int, string> ht(4);
+	int key = 3;
+	cout << "Зарезервировано: " << ht.get_capacity() << endl 
+		<< "Занято: " << ht.get_load() << endl 
+		<< "Хэш для ключа " << key << " = " << ht.get_hash(key) << endl;
+	
+	
 
 	return 0;
 }
