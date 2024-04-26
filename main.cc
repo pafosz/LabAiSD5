@@ -7,11 +7,9 @@ using namespace std;
 
 int main() {
 	setlocale(LC_ALL, "rus");
-	HashTable<int, string> ht(4);
-	int key = 3;
-	cout << "Зарезервировано: " << ht.get_capacity() << endl 
-		<< "Занято: " << ht.get_load() << endl 
-		<< "Хэш для ключа " << key << " = " << ht.get_hash(key) << endl;
+	HashTable<int, int> ht(4);
+	ht.insert(3, 4567);
+	ht.print();
 	
 	
 
