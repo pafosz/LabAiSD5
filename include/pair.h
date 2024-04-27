@@ -13,6 +13,14 @@ struct Pair {
 	const K& get_key() const { return key; }
 	const V& get_value() const { return value; }
 
+	bool operator==(const Pair& other) {
+		return key == other.key;
+	}
+
+	bool operator!=(const Pair& other) {
+		return key != other.key;
+	}
+
 };
 
 #endif LAB_5_INCLUDE_PAIR_H

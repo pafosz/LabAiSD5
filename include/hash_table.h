@@ -7,6 +7,8 @@
 #include "../include/random.h"
 #include "../include/pair.h"
 
+const double LOAD_FACTOR_THRESHOLD = 0.7;
+
 template<typename K, typename V>
 class HashTable {
 	
@@ -35,7 +37,7 @@ public:
 
 	size_t get_hash(const K& key);
 
-	void print() const;
+	void print();
 
 	void grow();
 
@@ -43,26 +45,24 @@ public:
 
 	void insert_or_assign(const K& key, const V& value);
 
-	bool contains(const V& value) const;
+	bool vcontains(const V& value) const;
 
-	const Pair<K, V>& search(const K& key) const;
+	bool kcontains(const K& key);
 
-	//Pair* find(const K& key) const;
+	V* search(const K& key);
 
 	bool erase(const K& key);
-
-	int count(const K& key) const; //возвращает количество элементов по соответствующему ключу
 };
 
 template<typename K, typename V>
-size_t HashTable<K, V>::_a = (Random::random(0, static_cast<size_t>(pow(2, _w))) | 1);
+size_t HashTable<K, V>::_a = (random(0, static_cast<size_t>(pow(2, _w))) | 1);
 
 template<typename K, typename V>
 size_t HashTable<K, V>::_w = sizeof(K) * 8;
 
 template<typename K, typename V>
 HashTable<K, V>::HashTable(size_t degree_of_two) : _degree_of_two(degree_of_two) {
-	_data.reserve((size_t(pow(2, _degree_of_two))));
+	_data.resize((size_t(pow(2, _degree_of_two))));
 	_size = 0;	
 }
 
@@ -109,18 +109,38 @@ size_t HashTable<K, V>::hash_function(const K& key) {
 }
 
 template<typename K, typename V>
-const Pair<K, V>& HashTable<K, V>::search(const K& key) const {
-	if (!_size) return nullptr;
+V* HashTable<K, V>::search(const K& key) {
+	if (!_size) throw std::invalid_argument("[search] the table is empty");
 	size_t index = hash_function(key);
 	size_t start = index;
 	do {
-		if (_data[index].not_empty && _data[index].key == key) {
-			return &_data[index];
-		}
+		if (_data[index].key == key) return &_data[index].value;
 		index = (index + 1) % get_capacity();
 	} while (_data[index].not_empty && index != start);
-	
-	return nullptr;
+	return nullptr;	
+}
+
+template<typename K, typename V>
+bool HashTable<K, V>::vcontains(const V& value) const {
+	if (!_size) return false;
+	for (const auto& pair : _data) {
+		if (pair.value == value) {
+			return true;
+		}
+	}
+	return false;
+}
+
+template<typename K, typename V>
+bool HashTable<K, V>::kcontains(const K& key) {
+	if (!_size) return false;
+	size_t index = hash_function(key);
+	size_t start = index;
+	do {
+		if (_data[index].key == key) return true;
+		index = (index + 1) % get_capacity();
+	} while (_data[index].not_empty && index != start);
+	return false;
 }
 
 template<typename K, typename V>
@@ -128,40 +148,72 @@ void HashTable<K, V>::grow() {
 	std::vector<Pair<K, V>> old_table = _data;
 	_data.clear();
 	_data.resize(get_capacity() * 2, Pair<K, V>());
+	_degree_of_two++;
 	_size = 0;
 	for (const auto& pair : old_table) {
 		if (pair.not_empty) {
-			insert(pair.get_key(), pair.get_value());
+			insert(pair.key, pair.value);
 		}
 	}
 }
 
 template<typename K, typename V>
 void HashTable<K, V>::insert(const K& key, const V& value) {
-	const double LOAD_FACTOR_THRESHOLD = 0.7;
 	if ((static_cast<double>(_size) / get_capacity()) > LOAD_FACTOR_THRESHOLD)
 		grow();
 	size_t index = hash_function(key);
 	size_t start = index;	
 	
 	do {
-		if (search(key) != nullptr) throw std::invalid_argument("[insert] Insertion using an existing key is not possible");
+		if (kcontains(key)) throw std::invalid_argument("[insert] Insertion using an existing key is not possible");
 		if (!_data[index].not_empty) {
 			_data[index] = Pair<K, V>(key, value);
 			_size++;
 			return;
 		}
 		index = (index + 1) % get_capacity();
-	} while (_data[index].not_empty && index != start);	
+	} while (index != start);	
 }
 
 template<typename K, typename V>
-void HashTable<K, V>::print() const {
-	if (!_size) throw std::invalid_argument("[print] hash table is empty");
-	for (const auto& pair : _data) {
-		if (pair.not_empty) {
-			std::cout << "Ключ: " << pair.get_key() << ", значение: " << pair.get_value() << std::endl;
+void HashTable<K, V>::insert_or_assign(const K& key, const V& value) {
+	if (!kcontains(key)) {
+		insert(key, value);
+		return;
+	}
+	V* old_value = search(key);
+	*old_value = value;	
+}
+
+template<typename K, typename V>
+bool HashTable<K, V>::erase(const K& key) {
+	if (!_size) return false;
+	if (!kcontains(key)) return false;
+	size_t index = hash_function(key);
+	size_t start = index;
+	do {		
+		if (_data[index].key == key) {
+			if (!_data[index + 1].not_empty) {
+				_data[index] = Pair<K, V>();
+				return true;
+			}
+			_data[index].value = NULL;
+			_data[index].key = NULL;
+			return true;
 		}
+		index = (index + 1) % get_capacity();
+	} while (_data[index].not_empty && index != start);
+	return false;
+}
+
+template<typename K, typename V>
+void HashTable<K, V>::print() {
+	if (!_size) throw std::invalid_argument("[print] hash table is empty");
+	std::cout << "Хэш-таблица" << std::endl;
+	for (size_t i = 0; i < _data.size(); ++i) {
+		std::cout << "Хэш " << i << ": ";
+		if (!_data[i].not_empty) std::cout << "Null" << std::endl;
+		else std::cout << "Ключ: " << _data[i].key << ", значение: " << _data[i].value << std::endl;
 	}
 	std::cout << std::endl;
 }
