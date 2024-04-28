@@ -8,13 +8,17 @@ using namespace std;
 
 int main() {
 	setlocale(LC_ALL, "rus");
-	HashTable<int, int> ht(4);
-	for (size_t i = 0; i < 10000; ++i) {
-		ht.insert_or_assign(lcg(), lcg());
+	HashTable<int, int> ht(8);
+	for (size_t i = 0; i < 20; ++i) {
+		ht.insert(lcg(), generate_random_int(1, 10));
 	}
+	
 	ht.print();
+	cout << ht.count_collision();
+	
 
-
-
+	
+	
+	
 	return 0;
 }

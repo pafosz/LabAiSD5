@@ -52,7 +52,31 @@ public:
 	V* search(const K& key);
 
 	bool erase(const K& key);
+
+	int count_collision();
 };
+
+template<typename K, typename V>
+int HashTable<K, V>::count_collision() {
+	if (!_size) return 0;
+	int collision = 0;
+	for (size_t i = 0; i < _data.size(); ++i) {
+		if (_data[i].not_empty) {
+			size_t index = hash_function(_data[i].key);
+			size_t start = index;
+
+			do {
+				if (index == i) index = (index + 1) % get_capacity();
+				if (_data[index].not_empty && (get_hash(_data[index].key) == start)) {
+					collision++;
+					index = (index + 1) % get_capacity();
+				}
+				else break;
+			} while (index != start);
+		}
+	}
+	return collision;
+}
 
 template<typename K, typename V>
 size_t HashTable<K, V>::_a = (random(0, static_cast<size_t>(pow(2, _w))) | 1);
@@ -105,7 +129,7 @@ size_t HashTable<K, V>::get_hash(const K& key) {
 
 template<typename K, typename V>
 size_t HashTable<K, V>::hash_function(const K& key) {
-	return ((key * _a) % size_t(pow(2, _w))) >> (_w - _degree_of_two);
+	return ((std::hash<K>{}(key) * _a) % size_t(pow(2, _w))) >> (_w - _degree_of_two);
 }
 
 template<typename K, typename V>
@@ -197,8 +221,8 @@ bool HashTable<K, V>::erase(const K& key) {
 				_data[index] = Pair<K, V>();
 				return true;
 			}
-			_data[index].value = NULL;
-			_data[index].key = NULL;
+			_data[index].value = -1;
+			_data[index].key = -1;
 			return true;
 		}
 		index = (index + 1) % get_capacity();
