@@ -31,6 +31,8 @@ public:
 
 	~HashTable();
 
+	void clear();
+
 	size_t get_capacity() const;
 
 	size_t get_load() const;
@@ -106,10 +108,15 @@ HashTable<K, V>& HashTable<K, V>::operator=(const HashTable& other) {
 }
 
 template<typename K, typename V>
-HashTable<K, V>::~HashTable() {
+void HashTable<K, V>::clear() {
 	_data.clear();
 	_size = 0;
 	_degree_of_two = 0;
+}
+
+template<typename K, typename V>
+HashTable<K, V>::~HashTable() {
+	clear();
 }
 
 template<typename K, typename V>

@@ -17,7 +17,12 @@ endif()
 add_library(HashTable SHARED 
     "include/hash_table.h"
     "src/hash_table.cc"
- "include/random.h" "include/pair.h")
+    "include/random.h" 
+    "src/random.cc"
+    "include/pair.h"
+    "src/pair.cc"
+    "include/task.h"
+    "src/task.cc")
 target_include_directories(HashTable PUBLIC "include")
 
 add_executable(main "main.cc")
