@@ -8,7 +8,7 @@ struct Pair {
 	V value;
 	bool not_empty;	
 
-	Pair() : not_empty(false) { }
+	Pair() : key{ }, value{ }, not_empty(false) { }
 	Pair(const K& key, const V& value) : key(key), value(value), not_empty(true) { }
 
 	bool operator==(const Pair& other) {

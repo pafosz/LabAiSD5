@@ -11,19 +11,21 @@ const double LOAD_FACTOR_THRESHOLD = 0.7;
 
 template<typename K, typename V>
 class HashTable {
-	
+
 	std::vector<Pair<K, V>> _data;
 	size_t _size;
 	size_t _degree_of_two;
-	
-	size_t hash_function(const K& key);
 
+	size_t hash_function(const K& key);
+	void grow();
+	V* search(const K& key);
+	
 	static size_t _a;
 	static size_t _w;
 
 public:
-	
-	HashTable(size_t degree_of_two);
+
+	HashTable(size_t degree_of_two, bool regular_size = false);
 
 	HashTable(const HashTable& other);
 
@@ -39,9 +41,7 @@ public:
 
 	size_t get_hash(const K& key);
 
-	void print();
-
-	void grow();
+	void print();	
 
 	void insert(const K& key, const V& value);
 
@@ -49,9 +49,7 @@ public:
 
 	bool vcontains(const V& value) const;
 
-	bool kcontains(const K& key);
-
-	V* search(const K& key);
+	bool kcontains(const K& key);	
 
 	bool erase(const K& key);
 
@@ -87,9 +85,16 @@ template<typename K, typename V>
 size_t HashTable<K, V>::_w = sizeof(K) * 8;
 
 template<typename K, typename V>
-HashTable<K, V>::HashTable(size_t degree_of_two) : _degree_of_two(degree_of_two) {
-	_data.resize((size_t(pow(2, _degree_of_two))));
-	_size = 0;	
+HashTable<K, V>::HashTable(size_t degree_of_two_or_size, bool regular_size) {
+	if (!regular_size) {
+		_degree_of_two = degree_of_two_or_size;
+		_data.resize((size_t(pow(2, _degree_of_two))));
+	}
+	else {
+		_degree_of_two = 0;
+		_data.resize(degree_of_two_or_size);
+	}
+	_size = 0;
 }
 
 template<typename K, typename V>
@@ -136,7 +141,16 @@ size_t HashTable<K, V>::get_hash(const K& key) {
 
 template<typename K, typename V>
 size_t HashTable<K, V>::hash_function(const K& key) {
-	return ((std::hash<K>{}(key) * _a) % size_t(pow(2, _w))) >> (_w - _degree_of_two);
+	if constexpr (std::is_same<K, std::string>::value) {
+		size_t hash_value = 0;
+		for (char c : key) {
+			hash_value = (hash_value * _a + static_cast<size_t>(c));
+		}
+		return hash_value % get_capacity();	
+	}
+	else return ((std::hash<K>{}(key) * _a) % size_t(pow(2, _w))) >> (_w - _degree_of_two);
+	
+	
 }
 
 template<typename K, typename V>
@@ -148,7 +162,7 @@ V* HashTable<K, V>::search(const K& key) {
 		if (_data[index].key == key) return &_data[index].value;
 		index = (index + 1) % get_capacity();
 	} while (_data[index].not_empty && index != start);
-	return nullptr;	
+	return nullptr;
 }
 
 template<typename K, typename V>
@@ -193,8 +207,8 @@ void HashTable<K, V>::insert(const K& key, const V& value) {
 	if ((static_cast<double>(_size) / get_capacity()) > LOAD_FACTOR_THRESHOLD)
 		grow();
 	size_t index = hash_function(key);
-	size_t start = index;	
-	
+	size_t start = index;
+
 	do {
 		if (kcontains(key)) throw std::invalid_argument("[insert] Insertion using an existing key is not possible");
 		if (!_data[index].not_empty) {
@@ -203,7 +217,7 @@ void HashTable<K, V>::insert(const K& key, const V& value) {
 			return;
 		}
 		index = (index + 1) % get_capacity();
-	} while (index != start);	
+	} while (index != start);
 }
 
 template<typename K, typename V>
@@ -213,7 +227,7 @@ void HashTable<K, V>::insert_or_assign(const K& key, const V& value) {
 		return;
 	}
 	V* old_value = search(key);
-	*old_value = value;	
+	*old_value = value;
 }
 
 template<typename K, typename V>
@@ -222,14 +236,14 @@ bool HashTable<K, V>::erase(const K& key) {
 	if (!kcontains(key)) return false;
 	size_t index = hash_function(key);
 	size_t start = index;
-	do {		
+	do {
 		if (_data[index].key == key) {
 			if (!_data[index + 1].not_empty) {
 				_data[index] = Pair<K, V>();
 				return true;
 			}
-			_data[index].value = -1;
-			_data[index].key = -1;
+			_data[index].value = {};
+			_data[index].key = {};
 			return true;
 		}
 		index = (index + 1) % get_capacity();
